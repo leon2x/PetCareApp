@@ -50,4 +50,29 @@ function findItems(orderId, callback) {
   connection.query('SELECT * FROM order_items WHERE order_id = ? ORDER BY id', [orderId], callback);
 }
 
-module.exports = { create, findByUser, findByIdForUser, findItems };
+// Admin: every order with the customer's name
+function findAllWithCustomer(callback) {
+  const sql = `SELECT o.*, u.name AS customer_name, u.username
+               FROM orders o JOIN users u ON u.id = o.user_id
+               ORDER BY o.created_at DESC, o.id DESC`;
+  connection.query(sql, callback);
+}
+
+// Admin: one order with customer and pet details
+function findByIdWithCustomer(orderId, callback) {
+  const sql = `SELECT o.*, u.name AS customer_name, u.username, p.name AS pet_name
+               FROM orders o
+               JOIN users u ON u.id = o.user_id
+               LEFT JOIN pets p ON p.id = o.pet_id
+               WHERE o.id = ?`;
+  connection.query(sql, [orderId], callback);
+}
+
+function updateStatus(orderId, status, callback) {
+  connection.query('UPDATE orders SET order_status = ? WHERE id = ?', [status, orderId], callback);
+}
+
+module.exports = {
+  create, findByUser, findByIdForUser, findItems,
+  findAllWithCustomer, findByIdWithCustomer, updateStatus
+};

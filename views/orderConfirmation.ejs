@@ -19,7 +19,7 @@
       <div class="card-body">
         <p><strong>Order number:</strong> <%= order.order_ref %></p>
         <p><strong>Placed on:</strong> <%= new Date(order.created_at).toLocaleString('en-SG') %></p>
-        <p><strong>Status:</strong> <span class="badge bg-success"><%= order.order_status %></span>
+        <p><strong>Status:</strong> <span class="badge <%= { CONFIRMED: 'bg-success', COMPLETED: 'bg-secondary', CANCELLED: 'bg-danger' }[order.order_status] || 'bg-dark' %>"><%= order.order_status %></span>
            <span class="text-muted">(payment: <%= order.payment_status %>, simulated)</span></p>
         <% if (order.appointment_at) { %>
           <p><strong>Appointment<% if (order.pet_name) { %> for <%= order.pet_name %><% } %>:</strong>
