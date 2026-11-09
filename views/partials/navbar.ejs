@@ -18,6 +18,12 @@
             <a class="nav-link" href="/journals">Journals</a>
           </li>
           <li class="nav-item">
+            <a class="nav-link" href="/shop">Shop</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/cart">Cart<% if (session.cart && Object.keys(session.cart).length > 0) { %> (<%= Object.keys(session.cart).length %>)<% } %></a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link" href="/logout">Logout</a>
           </li>
           <li class="nav-item">
