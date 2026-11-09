@@ -1,8 +1,9 @@
+require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const flash = require('connect-flash');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 const pageRoutes = require('./routes/pageRoutes');
 const authRoutes = require('./routes/authRoutes');
@@ -19,7 +20,7 @@ app.use(express.json());
 app.use(express.static('public'));
 
 app.use(session({
-  secret: 'secret123',
+  secret: process.env.SESSION_SECRET || 'dev-only-secret',
   resave: false,
   saveUninitialized: true
 }));
