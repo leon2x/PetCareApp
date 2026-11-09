@@ -9,6 +9,7 @@ const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const petRoutes = require('./routes/petRoutes');
 const journalRoutes = require('./routes/journalRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 app.use(flash());
 
@@ -27,5 +28,6 @@ app.use(pageRoutes);
 app.use(adminRoutes);
 app.use(petRoutes);
 app.use(journalRoutes);
+app.use(paymentRoutes);
 
 app.listen(PORT, () => console.log(`App running on http://localhost:${PORT}`));
