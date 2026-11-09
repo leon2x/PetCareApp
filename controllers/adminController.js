@@ -12,7 +12,9 @@ function listUsers(req, res) {
 
     res.render('adminUsers', {
       users: results,
-      session: req.session
+      session: req.session,
+      messages: req.flash('success'),
+      errors: req.flash('error')
     });
   });
 }
@@ -41,14 +43,26 @@ function userDetails(req, res) {
 }
 
 function deleteUser(req, res) {
-  const userId = req.params.id;
-  console.log(userId);
+  const userId = Number(req.params.id);
+
+  if (!Number.isInteger(userId)) {
+    req.flash('error', 'Invalid user.');
+    return res.redirect('/admin/users');
+  }
+
+  // An admin must not delete their own account
+  if (userId === req.session.user.id) {
+    req.flash('error', 'You cannot delete your own account.');
+    return res.redirect('/admin/users');
+  }
 
   userModel.deleteById(userId, (err) => {
     if (err) {
       console.error('Error deleting user:', err);
-      return res.send('Error deleting user');
+      req.flash('error', 'Error deleting user.');
+      return res.redirect('/admin/users');
     }
+    req.flash('success', 'User deleted.');
     res.redirect('/admin/users');
   });
 }
