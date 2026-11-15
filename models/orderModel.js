@@ -1,32 +1,45 @@
 const connection = require('../config/db');
 
-// Saves the order and its items together. If any insert fails, everything is rolled back.
+// Saves the order and its items together on ONE dedicated pool connection.
+// If any step fails, everything is rolled back, and the connection is always released.
 function create(order, items, callback) {
-  connection.beginTransaction((txErr) => {
-    if (txErr) return callback(txErr);
+  connection.getConnection((connectionError, dbConnection) => {
+    if (connectionError) return callback(connectionError);
 
-    const orderSql = `INSERT INTO orders
-      (order_ref, user_id, pet_id, total, currency, payment_status, order_status, provider_payment_id, appointment_at, estimated_delivery)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    const orderValues = [
-      order.orderRef, order.userId, order.petId, order.total, order.currency,
-      order.paymentStatus, order.orderStatus, order.providerPaymentId,
-      order.appointmentAt, order.estimatedDelivery
-    ];
+    const finish = (error, result) => {
+      dbConnection.release();
+      callback(error, result);
+    };
+    const fail = (error) => {
+      dbConnection.rollback(() => finish(error));
+    };
 
-    connection.query(orderSql, orderValues, (err, result) => {
-      if (err) return connection.rollback(() => callback(err));
+    dbConnection.beginTransaction((txErr) => {
+      if (txErr) return finish(txErr);
 
-      const orderId = result.insertId;
-      const itemRows = items.map((i) => [orderId, i.id, i.name, i.type, i.price, i.quantity]);
-      const itemsSql = 'INSERT INTO order_items (order_id, item_id, item_name, item_type, unit_price, quantity) VALUES ?';
+      const orderSql = `INSERT INTO orders
+        (order_ref, user_id, pet_id, total, currency, payment_status, order_status, provider_payment_id, appointment_at, estimated_delivery)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      const orderValues = [
+        order.orderRef, order.userId, order.petId, order.total, order.currency,
+        order.paymentStatus, order.orderStatus, order.providerPaymentId,
+        order.appointmentAt, order.estimatedDelivery
+      ];
 
-      connection.query(itemsSql, [itemRows], (err2) => {
-        if (err2) return connection.rollback(() => callback(err2));
+      dbConnection.query(orderSql, orderValues, (err, result) => {
+        if (err) return fail(err);
 
-        connection.commit((commitErr) => {
-          if (commitErr) return connection.rollback(() => callback(commitErr));
-          callback(null, orderId);
+        const orderId = result.insertId;
+        const itemRows = items.map((i) => [orderId, i.id, i.name, i.type, i.price, i.quantity]);
+        const itemsSql = 'INSERT INTO order_items (order_id, item_id, item_name, item_type, unit_price, quantity) VALUES ?';
+
+        dbConnection.query(itemsSql, [itemRows], (err2) => {
+          if (err2) return fail(err2);
+
+          dbConnection.commit((commitErr) => {
+            if (commitErr) return fail(commitErr);
+            finish(null, orderId);
+          });
         });
       });
     });
