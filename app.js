@@ -13,6 +13,7 @@ const journalRoutes = require('./routes/journalRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const shopRoutes = require('./routes/shopRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const serviceRoutes = require('./routes/serviceRoutes');
 
 app.use(flash());
 
@@ -35,5 +36,6 @@ app.use(journalRoutes);
 app.use(paymentRoutes);
 app.use(shopRoutes);
 app.use(orderRoutes);
+app.use(serviceRoutes);
 
 app.listen(PORT, () => console.log(`App running on http://localhost:${PORT}`));
