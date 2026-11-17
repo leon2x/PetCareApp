@@ -3,17 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Book a Pet Service</title>
+  <title>Book a Service – PetCare</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/css/petcare.css" rel="stylesheet">
 </head>
 <body>
   <%- include('partials/navbar') %>
 
-  <main class="container py-5">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-      <h1 class="h2 mb-0">Book a Pet Service</h1>
-      <a href="/bookings" class="btn btn-outline-secondary">View Booking History</a>
+  <main class="container py-4" id="main-content">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+      <h1 class="h2 mb-0">Book a Service</h1>
+      <a href="/bookings" class="btn btn-outline-secondary">My Bookings</a>
     </div>
+    <p class="text-secondary">Three quick steps: choose your pet, pick a service and date, then review and confirm. Nothing is charged online.</p>
 
     <% if (messages && messages.length) { %>
       <% for (let i = 0; i < messages.length; i++) { %>
@@ -27,58 +29,122 @@
     <% } %>
 
     <% if (!pets.length) { %>
-      <div class="alert alert-info">
-        Add a pet before booking a service. <a href="/pets/new">Add a pet</a>
+      <div class="empty-state">
+        <div class="big" aria-hidden="true">🐾</div>
+        <h2 class="h5">Add a pet first</h2>
+        <p class="text-secondary">A booking is made for one of your pets, so we need a pet profile before you can continue.</p>
+        <a href="/pets/new" class="btn btn-primary">Add a pet</a>
       </div>
     <% } else if (!services.length) { %>
-      <div class="alert alert-info">There are no services available to book right now.</div>
+      <div class="empty-state">
+        <div class="big" aria-hidden="true">🛠️</div>
+        <p class="mb-0">There are no services available to book right now. Please check back soon.</p>
+      </div>
     <% } else { %>
-      <form action="/services/book" method="POST">
-        <div class="row g-3 mb-4">
-          <div class="col-md-6">
-            <label for="petId" class="form-label">Pet</label>
-            <select id="petId" name="petId" class="form-select" required>
-              <option value="">Select a pet</option>
-              <% for (let i = 0; i < pets.length; i++) { %>
-                <option value="<%= pets[i].id %>" <%= selectedPetId === String(pets[i].id) ? 'selected' : '' %>>
-                  <%= pets[i].name %> (<%= pets[i].species %>)
-                </option>
-              <% } %>
-            </select>
+      <ol class="steps" aria-label="Booking steps" id="bookingSteps">
+        <li data-step="1"><span class="n">1</span> Pet</li>
+        <li data-step="2"><span class="n">2</span> Service &amp; date</li>
+        <li data-step="3"><span class="n">3</span> Review &amp; confirm</li>
+      </ol>
+
+      <form action="/services/book" method="POST" id="bookingForm" novalidate>
+        <div class="row g-4">
+          <div class="col-lg-8">
+
+            <fieldset class="book-step" id="step1">
+              <legend>1. Which pet is this for?</legend>
+              <p class="hint">Pick one of your pets. <a href="/pets/new">Add another pet</a></p>
+              <label for="petId" class="form-label">Pet</label>
+              <select id="petId" name="petId" class="form-select" required aria-describedby="petError">
+                <option value="">Select a pet</option>
+                <% for (let i = 0; i < pets.length; i++) { %>
+                  <option value="<%= pets[i].id %>" <%= (selectedPetId === String(pets[i].id) || (!selectedPetId && pets.length === 1)) ? 'selected' : '' %>>
+                    <%= pets[i].name %> (<%= pets[i].species %>)
+                  </option>
+                <% } %>
+              </select>
+              <div class="invalid-feedback" id="petError">Please choose which pet this booking is for.</div>
+            </fieldset>
+
+            <fieldset class="book-step" id="step2">
+              <legend>2. Choose a service and date</legend>
+              <p class="hint">Search or filter the list, then tap a service to select it.</p>
+
+              <div class="filter-bar" role="group" aria-label="Filter services">
+                <button type="button" class="chip" data-filter="all" aria-pressed="true">All</button>
+                <% const seen = {}; services.forEach((s) => { if (!seen[s.category.key]) { seen[s.category.key] = true; %>
+                  <button type="button" class="chip" data-filter="<%= s.category.key %>" aria-pressed="false"><%= s.category.icon %> <%= s.category.label %></button>
+                <% } }) %>
+              </div>
+              <div class="row g-2 mb-3">
+                <div class="col-sm-7">
+                  <label for="serviceSearch" class="visually-hidden">Search services</label>
+                  <input id="serviceSearch" type="search" class="form-control" placeholder="Search services, e.g. bath">
+                </div>
+                <div class="col-sm-5">
+                  <label for="serviceSort" class="visually-hidden">Sort services</label>
+                  <select id="serviceSort" class="form-select">
+                    <option value="name">Sort: Name A–Z</option>
+                    <option value="low">Sort: Price low to high</option>
+                    <option value="high">Sort: Price high to low</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="row g-3" id="serviceList" role="radiogroup" aria-label="Services">
+                <% for (let i = 0; i < services.length; i++) { %>
+                  <div class="col-sm-6 service-item" data-category="<%= services[i].category.key %>"
+                    data-name="<%= services[i].name.toLowerCase() %>" data-price="<%= Number(services[i].price) %>">
+                    <label class="service-option" for="service-<%= services[i].id %>">
+                      <input id="service-<%= services[i].id %>" type="radio" name="serviceId" value="<%= services[i].id %>"
+                        data-name="<%= services[i].name %>" data-price="<%= Number(services[i].price).toFixed(2) %>"
+                        <%= selectedServiceId === String(services[i].id) ? 'checked' : '' %> required>
+                      <span class="card">
+                        <span class="d-flex justify-content-between align-items-start gap-2">
+                          <span class="fw-semibold"><span aria-hidden="true"><%= services[i].category.icon %></span> <%= services[i].name %></span>
+                          <span class="price-tag text-nowrap">S$<%= Number(services[i].price).toFixed(2) %></span>
+                        </span>
+                        <span class="text-secondary small"><%= services[i].category.label %></span>
+                      </span>
+                    </label>
+                  </div>
+                <% } %>
+              </div>
+              <p class="text-secondary mt-3 d-none" id="noServices">No services match your search. <button type="button" class="btn btn-link p-0 align-baseline" id="clearFilters">Clear filters</button></p>
+              <div class="text-danger small mt-2 d-none" id="serviceError" role="alert">Please select a service.</div>
+
+              <div class="mt-4">
+                <label for="bookingDate" class="form-label">Booking date</label>
+                <input id="bookingDate" name="bookingDate" type="date" class="form-control" style="max-width: 260px"
+                  min="<%= today %>" value="<%= today %>" required aria-describedby="dateHelp">
+                <div class="form-text" id="dateHelp">Choose today or a later date.</div>
+                <div class="invalid-feedback" id="dateError">Please choose today or a future date.</div>
+              </div>
+            </fieldset>
           </div>
-          <div class="col-md-6">
-            <label for="bookingDate" class="form-label">Booking date</label>
-            <input id="bookingDate" name="bookingDate" type="date" class="form-control"
-              min="<%= today %>" value="<%= today %>" required>
+
+          <div class="col-lg-4">
+            <aside class="pc-card summary-card" aria-labelledby="summaryTitle">
+              <h2 class="h5" id="summaryTitle">3. Review &amp; confirm</h2>
+              <dl>
+                <dt>Pet</dt><dd id="sumPet"><span class="empty">Not chosen yet</span></dd>
+                <dt>Service</dt><dd id="sumService"><span class="empty">Not chosen yet</span></dd>
+                <dt>Date</dt><dd id="sumDate"><span class="empty">Not chosen yet</span></dd>
+                <dt>Price</dt><dd id="sumPrice"><span class="empty">–</span></dd>
+              </dl>
+              <p class="small text-secondary">The booking is saved with a <strong>pending</strong> payment. No payment is taken online.</p>
+              <button type="submit" class="btn btn-cta w-100" id="confirmBtn" data-loading-text="Creating booking…">Confirm booking</button>
+              <div class="text-danger small mt-2 d-none" id="formError" role="alert">Please complete the steps marked above.</div>
+            </aside>
           </div>
         </div>
-
-        <fieldset class="mb-4">
-          <legend class="h5 mb-3">Choose a service</legend>
-          <div class="row g-3">
-            <% for (let i = 0; i < services.length; i++) { %>
-              <div class="col-md-6 col-lg-4">
-                <label class="card h-100 p-3" for="service-<%= services[i].id %>">
-                  <div class="d-flex align-items-start gap-3">
-                    <input class="form-check-input mt-1" id="service-<%= services[i].id %>"
-                      type="radio" name="serviceId" value="<%= services[i].id %>" required>
-                    <span class="d-flex justify-content-between align-items-start gap-3 w-100">
-                      <span class="fw-semibold"><%= services[i].name %></span>
-                      <span class="text-nowrap">S$<%= Number(services[i].price).toFixed(2) %></span>
-                    </span>
-                  </div>
-                </label>
-              </div>
-            <% } %>
-          </div>
-        </fieldset>
-
-        <p class="text-secondary">Bookings and payments are recorded as pending. No payment is processed here.</p>
-        <button type="submit" class="btn btn-primary">Create booking</button>
       </form>
     <% } %>
   </main>
 
+  <%- include('partials/footer') %>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/petcare.js"></script>
+  <script src="/js/booking.js"></script>
 </body>
 </html>

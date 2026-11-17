@@ -2,21 +2,172 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Pet Care Journal System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PetCare – Book pet care services</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/css/petcare.css" rel="stylesheet">
 </head>
 <body>
-  
-    <%- include ('partials/navbar') %>
+  <%- include('partials/navbar') %>
+  <% const loggedIn = session && session.user; %>
 
-  <div class="container mt-5 text-center">
-    <h1>Welcome to the Pet Care Journal System</h1>
-    <p class="lead">Track your pets' activities and health in one place.</p>
-    <% if (!session || !session.user) { %>
-      <a href="/signup" class="btn btn-primary">Get Started</a>
-    <% } else { %>
-      <a href="/journals" class="btn btn-success">View My Journals</a>
-    <% } %>
-  </div>
+  <main id="main-content">
+  <% if (!loggedIn) { %>
+    <section class="hero">
+      <div class="container">
+        <div class="row align-items-center g-4">
+          <div class="col-lg-7">
+            <h1>Caring for your pet, made simple.</h1>
+            <p class="lead mb-4">Choose a service, pick a date and book in under a minute. Keep your pet's journal and orders in one place.</p>
+            <div class="d-flex flex-wrap gap-2">
+              <a href="/services" class="btn btn-cta btn-lg">Book a Service</a>
+              <a href="/signup" class="btn btn-outline-primary btn-lg">Create a free account</a>
+            </div>
+            <p class="mt-3 mb-0 text-secondary">You will be asked to log in first. Booking is free; no payment is taken online.</p>
+          </div>
+          <div class="col-lg-5 hero-art" aria-hidden="true">🐶🐱</div>
+        </div>
+      </div>
+    </section>
+  <% } else { %>
+    <section class="hero">
+      <div class="container">
+        <div class="row align-items-center g-3">
+          <div class="col-md-8">
+            <h1 class="mb-2">Hello, <%= session.user.name %> 👋</h1>
+            <p class="lead mb-0">
+              <% if (!pets.length) { %>Start by adding your first pet, then book a service.
+              <% } else if (!upcoming.length) { %>You have no upcoming bookings. Ready to book something for <%= pets[0].name %>?
+              <% } else { %>You have <%= upcoming.length %> upcoming booking<%= upcoming.length === 1 ? '' : 's' %>.<% } %>
+            </p>
+          </div>
+          <div class="col-md-4 text-md-end">
+            <% if (!pets.length) { %>
+              <a href="/pets/new" class="btn btn-cta btn-lg">Add your first pet</a>
+            <% } else { %>
+              <a href="/services" class="btn btn-cta btn-lg">Book a Service</a>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pc-section">
+      <div class="container">
+        <div class="row g-4">
+          <div class="col-lg-7">
+            <h2 class="h4">Upcoming bookings</h2>
+            <% if (!upcoming.length) { %>
+              <div class="empty-state">
+                <div class="big" aria-hidden="true">📅</div>
+                <p class="mb-3">Nothing booked yet.</p>
+                <a href="/services" class="btn btn-primary">Book a service</a>
+              </div>
+            <% } else { %>
+              <div class="d-grid gap-2">
+                <% upcoming.forEach((b) => { %>
+                  <div class="pc-card d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                      <strong><%= b.service_name %></strong> for <%= b.pet_name %><br>
+                      <span class="text-secondary"><%= b.booking_date %> · S$<%= Number(b.booked_price).toFixed(2) %></span>
+                    </div>
+                    <span class="badge status-<%= String(b.booking_status).toLowerCase() %>"><%= b.booking_status %></span>
+                  </div>
+                <% }) %>
+              </div>
+              <a href="/bookings" class="d-inline-block mt-3">See all bookings →</a>
+            <% } %>
+
+            <h2 class="h4 mt-4">Recent orders</h2>
+            <% if (!recentOrders.length) { %>
+              <p class="text-secondary">No shop orders yet. <a href="/shop">Browse the shop</a>.</p>
+            <% } else { %>
+              <div class="d-grid gap-2">
+                <% recentOrders.forEach((o) => { %>
+                  <a class="pc-card d-flex flex-wrap justify-content-between align-items-center gap-2 text-decoration-none text-reset" href="/orders/<%= o.id %>">
+                    <span><strong><%= o.order_ref %></strong><br><span class="text-secondary">SGD <%= Number(o.total).toFixed(2) %></span></span>
+                    <span class="badge status-<%= String(o.order_status).toLowerCase() %>"><%= o.order_status %></span>
+                  </a>
+                <% }) %>
+              </div>
+              <a href="/orders" class="d-inline-block mt-3">See all orders →</a>
+            <% } %>
+          </div>
+
+          <div class="col-lg-5">
+            <div class="d-flex justify-content-between align-items-center">
+              <h2 class="h4">Your pets</h2>
+              <a href="/pets/new" class="btn btn-outline-primary btn-sm">+ Add pet</a>
+            </div>
+            <% if (!pets.length) { %>
+              <div class="empty-state">
+                <div class="big" aria-hidden="true">🐾</div>
+                <p class="mb-3">You need a pet profile before you can book.</p>
+                <a href="/pets/new" class="btn btn-primary">Add a pet</a>
+              </div>
+            <% } else { %>
+              <div class="d-grid gap-2">
+                <% pets.forEach((pet) => { %>
+                  <div class="pet-chip">
+                    <% if (pet.image) { %><img src="/images/<%= pet.image %>" alt="Photo of <%= pet.name %>"><% } else { %><span class="pet-avatar" aria-hidden="true">🐾</span><% } %>
+                    <div class="flex-grow-1">
+                      <strong><%= pet.name %></strong><br>
+                      <span class="text-secondary"><%= pet.species %><% if (pet.breed) { %> · <%= pet.breed %><% } %></span>
+                    </div>
+                    <a class="btn btn-sm btn-outline-primary" href="/services?petId=<%= pet.id %>">Book</a>
+                  </div>
+                <% }) %>
+              </div>
+              <a href="/journals" class="d-inline-block mt-3">Open the pet journal →</a>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </section>
+  <% } %>
+
+    <section class="pc-section alt" id="how-it-works">
+      <div class="container">
+        <h2 class="mb-4">How booking works</h2>
+        <div class="row g-4">
+          <div class="col-md-4"><div class="how-step"><span class="how-num">1</span><div><h3 class="h6 mb-1">Choose your pet</h3><p class="mb-0 text-secondary">Select a pet profile, or add one in a few seconds.</p></div></div></div>
+          <div class="col-md-4"><div class="how-step"><span class="how-num">2</span><div><h3 class="h6 mb-1">Pick a service and date</h3><p class="mb-0 text-secondary">Compare prices, then choose the day that suits you.</p></div></div></div>
+          <div class="col-md-4"><div class="how-step"><span class="how-num">3</span><div><h3 class="h6 mb-1">Review and confirm</h3><p class="mb-0 text-secondary">Check the summary, then confirm. Payment stays pending, nothing is charged online.</p></div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pc-section" id="services">
+      <div class="container">
+        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+          <h2 class="mb-0">Our services</h2>
+          <a href="/services" class="btn btn-outline-primary">See all and book</a>
+        </div>
+        <% if (!services.length) { %>
+          <div class="empty-state">Services are not available right now. Please check back soon.</div>
+        <% } else { %>
+          <div class="row g-3">
+            <% services.forEach((service) => { %>
+              <div class="col-sm-6 col-lg-3">
+                <div class="pc-card service-tile">
+                  <span class="service-icon" aria-hidden="true"><%= service.category.icon %></span>
+                  <h3 class="h6"><%= service.name %></h3>
+                  <p class="text-secondary small mb-2"><%= service.category.label %></p>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="price-tag">S$<%= Number(service.price).toFixed(2) %></span>
+                    <a class="btn btn-sm btn-outline-primary" href="/services?service=<%= service.id %>">Book</a>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/petcare.js"></script>
 </body>
 </html>

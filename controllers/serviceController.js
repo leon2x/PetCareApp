@@ -1,6 +1,7 @@
 const petModel = require('../models/petModel');
 const serviceModel = require('../models/serviceModel');
 const serviceBookingModel = require('../models/serviceBookingModel');
+const { categoryFor } = require('../helpers/serviceCategories');
 
 const validationMessage = 'Choose a pet, service, and valid booking date.';
 const unavailableMessage = 'That pet or service is unavailable for booking.';
@@ -50,10 +51,13 @@ function listServices(req, res) {
       const requestedPetId = req.query.petId;
       const selectedPet = pets.find((pet) => String(pet.id) === String(requestedPetId));
 
+      const selectedService = services.find((service) => String(service.id) === String(req.query.service));
+
       return res.render('services', {
         pets,
-        services,
+        services: services.map((service) => ({ ...service, category: categoryFor(service.name) })),
         selectedPetId: selectedPet ? String(selectedPet.id) : '',
+        selectedServiceId: selectedService ? String(selectedService.id) : '',
         today: localDateString(new Date()),
         messages: req.flash('success'),
         errors: req.flash('error'),

@@ -1,53 +1,66 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="/">Pet Care Journal</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+<%
+  const path = (typeof currentPath === 'string') ? currentPath : '';
+  const user = session && session.user;
+  const cartCount = (session && session.cart) ? Object.keys(session.cart).length : 0;
+  const is = (prefix) => (prefix === '/' ? path === '/' : path === prefix || path.startsWith(prefix + '/')) ? 'active' : '';
+  const cur = (prefix) => is(prefix) ? 'aria-current="page"' : '';
+%>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<nav class="navbar navbar-expand-lg pc-nav" aria-label="Main navigation">
+  <div class="container">
+    <a class="navbar-brand" href="/"><span class="brand-mark" aria-hidden="true">🐾</span> PetCare</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+      aria-controls="navbarNav" aria-expanded="false" aria-label="Open menu">
       <span class="navbar-toggler-icon"></span>
     </button>
 
     <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <% if (session && session.user) { %>
-          <% if (session.user.role === 'admin') { %>
-            <li class="nav-item">
-              <a class="nav-link" href="/admin/users">View Users</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/admin/orders">All Orders</a>
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3">
+        <li class="nav-item"><a class="nav-link <%= is('/') %>" href="/" <%- cur('/') %>>Home</a></li>
+        <% if (user) { %>
+          <li class="nav-item"><a class="nav-link <%= is('/bookings') %>" href="/bookings" <%- cur('/bookings') %>>My Bookings</a></li>
+          <li class="nav-item"><a class="nav-link <%= is('/shop') %>" href="/shop" <%- cur('/shop') %>>Shop</a></li>
+          <li class="nav-item"><a class="nav-link <%= is('/orders') %>" href="/orders" <%- cur('/orders') %>>My Orders</a></li>
+          <li class="nav-item"><a class="nav-link <%= is('/journals') %>" href="/journals" <%- cur('/journals') %>>Pet Journal</a></li>
+          <% if (user.role === 'admin') { %>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle <%= (is('/admin') || '') %>" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Admin</a>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="/admin/dashboard">Dashboard</a></li>
+                <li><a class="dropdown-item" href="/admin/users">Users</a></li>
+                <li><a class="dropdown-item" href="/admin/orders">All Orders</a></li>
+              </ul>
             </li>
           <% } %>
-          
+        <% } else { %>
+          <li class="nav-item"><a class="nav-link" href="/#how-it-works">How it works</a></li>
+          <li class="nav-item"><a class="nav-link" href="/#services">Services</a></li>
+        <% } %>
+      </ul>
+
+      <ul class="navbar-nav align-items-lg-center gap-lg-1">
+        <% if (user) { %>
           <li class="nav-item">
-            <a class="nav-link" href="/journals">Journals</a>
+            <a class="nav-link <%= is('/cart') %>" href="/cart" <%- cur('/cart') %>>
+              🛒 Cart<% if (cartCount > 0) { %> <span class="cart-count" aria-label="<%= cartCount %> items in cart"><%= cartCount %></span><% } %>
+            </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="/services">Book a Service</a>
+            <a class="btn btn-cta" href="/services">Book a Service</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/bookings">Booking History</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/shop">Shop</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/orders">My Orders</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/cart">Cart<% if (session.cart && Object.keys(session.cart).length > 0) { %> (<%= Object.keys(session.cart).length %>)<% } %></a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/logout">Logout</a>
-          </li>
-          <li class="nav-item">
-            <span class="nav-link text-white disabled">Logged in as: <strong><%= session.user.name %></strong></span>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <%= user.name %>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="/pets/new">Add a pet</a></li>
+              <li><a class="dropdown-item" href="/logout">Log out</a></li>
+            </ul>
           </li>
         <% } else { %>
-          <li class="nav-item">
-            <a class="nav-link" href="/login">Login</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/signup">Sign Up</a>
-          </li>
+          <li class="nav-item"><a class="nav-link <%= is('/login') %>" href="/login">Log in</a></li>
+          <li class="nav-item"><a class="nav-link <%= is('/signup') %>" href="/signup">Sign up</a></li>
+          <li class="nav-item"><a class="btn btn-cta" href="/services">Book a Service</a></li>
         <% } %>
       </ul>
     </div>

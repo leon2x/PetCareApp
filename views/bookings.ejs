@@ -5,11 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Booking History</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/css/petcare.css" rel="stylesheet">
 </head>
 <body>
   <%- include('partials/navbar') %>
 
-  <main class="container py-5">
+  <main id="main-content" class="container py-5">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
       <h1 class="h2 mb-0">Booking History</h1>
       <a href="/services" class="btn btn-primary">Book a Service</a>
@@ -26,12 +27,22 @@
       <% } %>
     <% } %>
 
+    <% const todayStr = (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })(); %>
+    <% const upcoming = bookings.filter((b) => b.booking_date >= todayStr).reverse(); %>
+    <% const past = bookings.filter((b) => b.booking_date < todayStr); %>
+
     <% if (!bookings.length) { %>
-      <div class="alert alert-info">You have no bookings yet.</div>
+      <div class="empty-state">
+        <div class="big" aria-hidden="true">📅</div>
+        <h2 class="h5">You have no bookings yet</h2>
+        <p class="text-secondary">Book your first service in three quick steps.</p>
+        <a href="/services" class="btn btn-cta">Book a Service</a>
+      </div>
     <% } else { %>
+      <% const renderTable = (rows) => { %>
       <div class="table-responsive">
-        <table class="table table-striped table-hover align-middle">
-          <thead class="table-dark">
+        <table class="table align-middle">
+          <thead>
             <tr>
               <th scope="col">Booking #</th>
               <th scope="col">Date</th>
@@ -43,17 +54,17 @@
             </tr>
           </thead>
           <tbody>
-            <% for (let i = 0; i < bookings.length; i++) { %>
+            <% for (let i = 0; i < rows.length; i++) { %>
               <tr>
-                <td><%= bookings[i].booking_id %></td>
-                <td><%= bookings[i].booking_date %></td>
-                <td><%= bookings[i].pet_name %></td>
-                <td><%= bookings[i].service_name %></td>
-                <td>S$<%= Number(bookings[i].booked_price).toFixed(2) %></td>
-                <td><span class="badge text-bg-secondary"><%= bookings[i].booking_status %></span></td>
+                <td><%= rows[i].booking_id %></td>
+                <td><%= rows[i].booking_date %></td>
+                <td><%= rows[i].pet_name %></td>
+                <td><%= rows[i].service_name %></td>
+                <td>S$<%= Number(rows[i].booked_price).toFixed(2) %></td>
+                <td><span class="badge status-<%= String(rows[i].booking_status).toLowerCase() %>"><%= rows[i].booking_status %></span></td>
                 <td>
-                  <% if (bookings[i].payment_status) { %>
-                    <span class="badge text-bg-secondary"><%= bookings[i].payment_status %></span>
+                  <% if (rows[i].payment_status) { %>
+                    <span class="badge status-<%= String(rows[i].payment_status).toLowerCase() %>"><%= rows[i].payment_status %></span>
                   <% } else { %>
                     <span class="text-secondary">No payment record</span>
                   <% } %>
@@ -63,10 +74,23 @@
           </tbody>
         </table>
       </div>
-      <p class="text-secondary">Payments are pending. No payment has been processed by this app.</p>
+      <% }; %>
+
+      <h2 class="h5">Upcoming</h2>
+      <% if (!upcoming.length) { %>
+        <p class="text-secondary">No upcoming bookings. <a href="/services">Book a service</a></p>
+      <% } else { renderTable(upcoming); } %>
+
+      <% if (past.length) { %>
+        <h2 class="h5 mt-4">Past bookings</h2>
+        <% renderTable(past); %>
+      <% } %>
+      <p class="small text-secondary mt-3">Payments are pending. No payment has been processed by this app.</p>
     <% } %>
   </main>
 
+  <%- include('partials/footer') %>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/petcare.js"></script>
 </body>
 </html>

@@ -428,8 +428,13 @@ test('renders services with only an owned pet preselected and complete locals', 
 
   assert.equal(render[0].view, 'services');
   assert.deepEqual(render[0].locals.pets, pets);
-  assert.deepEqual(render[0].locals.services, services);
+  // The controller adds a display category to each service (used for icons and filters)
+  assert.deepEqual(render[0].locals.services, [{
+    ...services[0],
+    category: { key: 'grooming', label: 'Grooming', icon: '🛁' }
+  }]);
   assert.equal(render[0].locals.selectedPetId, '5');
+  assert.equal(render[0].locals.selectedServiceId, '');
   assert.equal(render[0].locals.today, localToday());
   assert.deepEqual(render[0].locals.messages, ['ok']);
   assert.deepEqual(render[0].locals.errors, []);

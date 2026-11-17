@@ -28,6 +28,12 @@ app.use(session({
   saveUninitialized: true
 }));
 
+// Lets shared partials (navbar) highlight the current page
+app.use((req, res, next) => {
+  res.locals.currentPath = req.path;
+  next();
+});
+
 app.use(authRoutes);
 app.use(pageRoutes);
 app.use(adminRoutes);
